@@ -1,3 +1,5 @@
+import { openDB } from "./db.js";
+
 // 収支区分ごとのカテゴリ定義
 // 内部値は工程3（新規登録）の実装前に TBD-004 として確定する
 const CATEGORIES = {
@@ -69,7 +71,18 @@ const CATEGORIES = {
    * アプリケーションの初期化処理。
    * DOM が読み込まれた後に一度だけ呼び出す。
    */
-  function init() {
+  async function init() {
+    // IndexedDB への接続（工程3以降で db オブジェクトを各処理へ渡す）
+    let db;
+    try{
+      db = await openDB();
+      console.log("IndexDBに接続しました",db.name);
+    }catch(error){
+      console.error("IndexDBに接続できませんでした",error);
+      return;
+       // 接続失敗時もUIは表示するが、工程3以降の保存処理は動作しない
+    }
+
     const form       = document.getElementById("record-form");
     const dateInput  = document.getElementById("date");
     const categoryEl = document.getElementById("category");
@@ -77,7 +90,7 @@ const CATEGORIES = {
   
     // DOM 取得に失敗した場合は後続処理を止める
     if (!form || !dateInput || !categoryEl || !statusEl) {
-      console.error("init: 必要な DOM 要素が見つかりません。HTML の id を確認してください。");
+      console.error("init: 必要な DOM 要素が見つかりません。");
       return;
     }
   
