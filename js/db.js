@@ -37,4 +37,30 @@ function openDB() {
   });
 }
 
-export { openDB, STORE_NAME };
+/**
+ * 家計記録をrecordsストアへ追加する
+ * @param {IDBDatabase} db
+ * @param {object} record -idとcreatedAtを除いた記録オブジェクト
+ * @returns {Promise<number>} 採番されたid
+ */
+
+function addRecord(db,record){
+    return new Promise((resolve,reject) => {
+        //readwriteトランザクションを開始する
+        const transaction = db.transaction(STORE_NAME,"readwrite");
+        //recordsストアを取得する
+        const store = transaction.objectStore(STORE_NAME);
+        //記録を追加する
+        const request = store.add(record);
+        //成功したら採番されたidを返す
+        request.onsuccess = (event) => {
+            resolve(event.target.result);
+        };
+        //失敗したらエラーを返す
+        request.onerror = (event) => {
+            reject(new Error(`記録の追加に失敗しました: ${event.target.error}`));
+        };
+    });
+}
+
+export { openDB,addRecord, STORE_NAME };
