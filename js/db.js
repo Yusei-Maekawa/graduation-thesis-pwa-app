@@ -8,7 +8,7 @@ const STORE_NAME = "records";
  * @returns {Promise<IDBDatabase>}
  */
 function openDB() {
-    // promiseでラップ(既存の機能やプログラムを「別のコードで包み込んで、使いやすくする・互換性を持たせる処理)する理由
+  // promiseでラップ(既存の機能やプログラムを「別のコードで包み込んで、使いやすくする・互換性を持たせる処理)する理由
     // => IndexedDB のAPIはイベントベースで設計されており、await indexedDB.open(...) とは書けない。Promise でラップすることで、呼び出し側が await openDB() という読みやすい形で使える
     // 呼び出すのが、コールバック関数の入れ子ではなく、Promise オブジェクトを返すことで、呼び出し側が await openDB() という読みやすい形で使える(コードが直線的になる)
   return new Promise((resolve, reject) => {
@@ -45,22 +45,45 @@ function openDB() {
  */
 
 function addRecord(db,record){
-    return new Promise((resolve,reject) => {
-        //readwriteトランザクションを開始する
-        const transaction = db.transaction(STORE_NAME,"readwrite");
-        //recordsストアを取得する
-        const store = transaction.objectStore(STORE_NAME);
-        //記録を追加する
-        const request = store.add(record);
-        //成功したら採番されたidを返す
-        request.onsuccess = (event) => {
-            resolve(event.target.result);
-        };
-        //失敗したらエラーを返す
-        request.onerror = (event) => {
-            reject(new Error(`記録の追加に失敗しました: ${event.target.error}`));
-        };
-    });
+  return new Promise((resolve,reject) => {
+      //readwriteトランザクションを開始する
+      const transaction = db.transaction(STORE_NAME,"readwrite");
+      //recordsストアを取得する
+      const store = transaction.objectStore(STORE_NAME);
+      //記録を追加する
+      const request = store.add(record);
+      //成功したら採番されたidを返す
+      request.onsuccess = (event) => {
+          resolve(event.target.result);
+      };
+      //失敗したらエラーを返す
+      request.onerror = (event) => {
+          reject(new Error(`記録の追加に失敗しました: ${event.target.error}`));
+      };
+  });
 }
 
-export { openDB,addRecord, STORE_NAME };
+/**
+ * records ストアの全件を取得する。
+ * 並べ替えは行わない（並べ替えは record-service.js の責務）。
+ * @param {IDBDatabase} db
+ * @returns {Promise<object[]>}
+ */
+function getAllRecords(db) {
+  return new Promise((resolve, reject) => {
+    // 読み取りのみのため "readonly" を使う
+    const transaction = db.transaction(STORE_NAME, "readonly");
+    const store       = transaction.objectStore(STORE_NAME);
+    const request     = store.getAll();
+
+    request.onsuccess = (event) => {
+      resolve(event.target.result);
+    };
+
+    request.onerror = (event) => {
+      reject(new Error(`記録の取得に失敗しました: ${event.target.error}`));
+    };
+  });
+}
+
+export { openDB, addRecord, getAllRecords, STORE_NAME };

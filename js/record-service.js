@@ -1,4 +1,4 @@
-import { addRecord } from "./db.js";
+import { addRecord, getAllRecords } from "./db.js";
 import { validateRecord } from "./validation.js";
 
 /**
@@ -6,7 +6,6 @@ import { validateRecord } from "./validation.js";
  * @param {IDBDatabase} db
  * @param {object} input - フォームから取り出した入力値
  * @returns {Promise<{ok: boolean, errors: object}>}
- *   ok: 保存できたか, errors: 検証エラーの項目とメッセージ
  */
 async function saveRecord(db, input) {
   const errors = validateRecord(input);
@@ -17,11 +16,9 @@ async function saveRecord(db, input) {
 
   const record = {
     type:      input.type,
-    // Number() で文字列から数値へ変換する
     amount:    Number(input.amount),
     category:  input.category,
     date:      input.date,
-    // 空白のみのメモは空文字として保存する
     memo:      input.memo.trim(),
     createdAt: Date.now(),
   };
@@ -30,4 +27,23 @@ async function saveRecord(db, input) {
   return { ok: true, errors: {} };
 }
 
-export { saveRecord };
+/**
+ * 全記録を取得し、記録日の新しい順に並べ替えて返す。
+ * 同じ記録日の場合は、登録日時（createdAt）の新しい順とする。
+ * @param {IDBDatabase} db
+ * @returns {Promise<object[]>}
+ */
+async function getSortedRecords(db) {
+  const records = await getAllRecords(db);
+
+  return records.sort((a, b) => {
+    // date は "YYYY-MM-DD" 形式の文字列のため、文字列比較で日付順になる
+    if (a.date !== b.date) {
+      return a.date < b.date ? 1 : -1;
+    }
+    // 同じ記録日の場合は createdAt（数値）の新しい順
+    return b.createdAt - a.createdAt;
+  });
+}
+
+export { saveRecord, getSortedRecords };

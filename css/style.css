@@ -33,6 +33,36 @@ body {
 }
 
 /* ===========================
+   タブナビゲーション
+=========================== */
+
+.tab-nav {
+  display: flex;
+  background-color: #ffffff;
+  border-bottom: 1px solid #dddddd;
+  /* 画面幅が狭い場合に横スクロールできるようにする */
+  overflow-x: auto;
+}
+
+.tab-button {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.85rem;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  color: #555555;
+}
+
+.tab-button[aria-current="true"] {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: bold;
+}
+
+/* ===========================
    メインコンテンツ
 =========================== */
 
@@ -42,23 +72,22 @@ body {
   padding: 1rem;
 }
 
-/* ===========================
-   セクション共通
-=========================== */
-
-.section-form,
-.section-history {
+.tab-panel {
   background-color: #ffffff;
   border: 1px solid #dddddd;
   border-radius: 6px;
   padding: 1rem;
-  margin-bottom: 1.5rem;
 }
 
-.section-form h2,
-.section-history h2 {
+.tab-panel h2 {
   margin-top: 0;
   font-size: 1rem;
+}
+
+.placeholder-text {
+  color: #888888;
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 /* ===========================
@@ -153,11 +182,84 @@ legend {
 }
 
 /* ===========================
-   履歴エリア
+   履歴一覧
 =========================== */
 
-.history-placeholder {
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.history-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  /* 色だけで支出・収入を区別しないよう、左のボーダーは補助的な表現にとどめる */
+  border-left: 4px solid #999999;
+}
+
+.history-item--expense {
+  border-left-color: #c0392b;
+}
+
+.history-item--income {
+  border-left-color: #2563eb;
+}
+
+.history-item-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 1rem;
+}
+
+.history-item-type {
+  font-size: 0.8rem;
+  color: #555555;
+  /* 色だけに頼らず、文字でも支出・収入を明示する */
+  border: 1px solid #cccccc;
+  border-radius: 3px;
+  padding: 0.1rem 0.4rem;
+}
+
+.history-item-amount {
+  font-weight: bold;
+}
+
+.history-item-sub {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #666666;
+  margin-top: 0.25rem;
+}
+
+.history-item-memo {
+  font-size: 0.85rem;
+  color: #444444;
+  margin: 0.4rem 0 0 0;
+}
+
+.history-item-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.history-item-actions button {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+}
+
+.history-empty {
   color: #888888;
   font-size: 0.9rem;
-  margin: 0;
+  text-align: center;
+  padding: 1rem 0;
 }
