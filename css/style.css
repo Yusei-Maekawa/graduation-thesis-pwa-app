@@ -10,7 +10,6 @@
 
 body {
   margin: 0;
-  /* スマートフォンで読みやすい基本フォントサイズ */
   font-size: 1rem;
   font-family: system-ui, sans-serif;
   line-height: 1.6;
@@ -100,7 +99,6 @@ legend {
   margin-bottom: 0.25rem;
 }
 
-/* 入力欄を横幅いっぱいにして、スマートフォンで操作しやすいサイズにする */
 .form-field input,
 .form-field select {
   width: 100%;
@@ -113,13 +111,24 @@ legend {
 }
 
 /* ===========================
+   エラーメッセージ
+=========================== */
+
+.field-error {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.85rem;
+  color: #c0392b;
+  min-height: 1.2em;
+}
+
+/* ===========================
    状態メッセージ
 =========================== */
 
 .form-status {
   margin: 0.5rem 0;
   font-size: 0.9rem;
-  min-height: 1.4em; /* メッセージがない場合でもレイアウトが崩れないようにする */
+  min-height: 1.4em;
 }
 
 /* ===========================
