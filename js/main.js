@@ -1,8 +1,13 @@
 import { openDB } from "./db.js";
-import { saveRecord, getSortedRecords } from "./record-service.js";
+import {
+  saveRecord,
+  getSortedRecords,
+  getRecord,
+  updateExistingRecord,
+} from "./record-service.js";
 import { VALID_CATEGORIES } from "./validation.js";
+import { initRouter, navigateTo } from "./router.js";
 
-// カテゴリのラベルと内部値のマッピング
 const CATEGORY_LABELS = {
   expense: {
     food:          "食費",
@@ -22,6 +27,9 @@ const CATEGORY_LABELS = {
   },
 };
 
+// 現在編集中の記録の id。null のときは新規登録モード。
+let editingId = null;
+
 /**
  * 今日の日付を YYYY-MM-DD 形式で返す。
  * @returns {string}
@@ -37,7 +45,7 @@ function getTodayString() {
 /**
  * カテゴリ選択欄を、指定した収支区分の選択肢で再構築する。
  * @param {HTMLSelectElement} selectEl
- * @param {string} type - "expense" または "income"
+ * @param {string} type
  */
 function updateCategoryOptions(selectEl, type) {
   const categories = VALID_CATEGORIES[type];
@@ -65,10 +73,9 @@ function updateCategoryOptions(selectEl, type) {
 
 /**
  * フォームのエラーメッセージ表示を更新する。
- * @param {object} errors - 項目名をキー、メッセージを値とするオブジェクト
+ * @param {object} errors
  */
 function showErrors(errors) {
-  // 既存のエラー表示をすべてリセットする
   document.querySelectorAll(".field-error").forEach((el) => {
     el.textContent = "";
   });
@@ -82,8 +89,7 @@ function showErrors(errors) {
 }
 
 /**
- * 金額を「1,200円」のような表示用文字列に整形する。
- * 保存値自体には影響しない（表示専用）。
+ * 金額を表示用に整形する。
  * @param {number} amount
  * @returns {string}
  */
@@ -99,6 +105,52 @@ function formatAmount(amount) {
 function formatDate(dateStr) {
   const [year, month, day] = dateStr.split("-");
   return `${year}/${month}/${day}`;
+}
+
+/**
+ * フォームを新規登録の初期状態に戻す。
+ * @param {HTMLFormElement} form
+ * @param {HTMLInputElement} dateInput
+ * @param {HTMLSelectElement} categoryEl
+ * @param {HTMLButtonElement} submitButton
+ */
+function resetFormToNewMode(form, dateInput, categoryEl, submitButton) {
+  editingId = null;
+  form.reset();
+  dateInput.value = getTodayString();
+  updateCategoryOptions(categoryEl, "expense");
+  const expenseRadio = form.querySelector('input[name="type"][value="expense"]');
+  if (expenseRadio) {
+    expenseRadio.checked = true;
+  }
+  submitButton.textContent = "記録する";
+}
+
+/**
+ * 指定した記録の内容をフォームへ反映し、編集モードにする。
+ * @param {object} record
+ * @param {HTMLFormElement} form
+ * @param {HTMLSelectElement} categoryEl
+ * @param {HTMLInputElement} dateInput
+ * @param {HTMLButtonElement} submitButton
+ */
+function fillFormForEdit(record, form, categoryEl, dateInput, submitButton) {
+  editingId = record.id;
+
+  const typeRadio = form.querySelector(`input[name="type"][value="${record.type}"]`);
+  if (typeRadio) {
+    typeRadio.checked = true;
+  }
+
+  // 収支区分に対応するカテゴリを先に用意してから値を選択する
+  updateCategoryOptions(categoryEl, record.type);
+  categoryEl.value = record.category;
+
+  form.querySelector("#amount").value = record.amount;
+  dateInput.value                     = record.date;
+  form.querySelector("#memo").value   = record.memo;
+
+  submitButton.textContent = "更新する";
 }
 
 /**
@@ -121,7 +173,7 @@ function renderHistory(listEl, records) {
     const item = document.createElement("li");
     item.className = `history-item history-item--${record.type}`;
 
-    const typeLabel = record.type === "expense" ? "支出" : "収入";
+    const typeLabel     = record.type === "expense" ? "支出" : "収入";
     const categoryLabel = CATEGORY_LABELS[record.type]?.[record.category] ?? record.category;
 
     item.innerHTML = `
@@ -161,24 +213,6 @@ async function refreshHistory(db, listEl, statusEl) {
 }
 
 /**
- * タブを切り替える。
- * @param {string} tabName - "home" | "form" | "history" | "summary"
- * @param {HTMLElement[]} tabButtons
- * @param {HTMLElement[]} tabPanels
- */
-function switchTab(tabName, tabButtons, tabPanels) {
-  tabPanels.forEach((panel) => {
-    const isTarget = panel.id === `tab-${tabName}`;
-    panel.hidden = !isTarget;
-  });
-
-  tabButtons.forEach((button) => {
-    const isTarget = button.dataset.tab === tabName;
-    button.setAttribute("aria-current", String(isTarget));
-  });
-}
-
-/**
  * アプリケーションの初期化処理。
  */
 async function init() {
@@ -191,41 +225,42 @@ async function init() {
     return;
   }
 
-  const form        = document.getElementById("record-form");
-  const dateInput    = document.getElementById("date");
-  const categoryEl   = document.getElementById("category");
-  const statusEl     = document.getElementById("form-status");
+  const form          = document.getElementById("record-form");
+  const dateInput     = document.getElementById("date");
+  const categoryEl    = document.getElementById("category");
+  const statusEl      = document.getElementById("form-status");
+  const submitButton  = form?.querySelector('button[type="submit"]');
   const historyList   = document.getElementById("history-list");
   const historyStatus = document.getElementById("history-status");
   const tabButtons    = Array.from(document.querySelectorAll(".tab-button"));
-  const tabPanels      = Array.from(document.querySelectorAll(".tab-panel"));
+  const tabPanels     = Array.from(document.querySelectorAll(".tab-panel"));
 
-  if (!form || !dateInput || !categoryEl || !statusEl || !historyList || !historyStatus) {
+  if (!form || !dateInput || !categoryEl || !statusEl || !submitButton || !historyList || !historyStatus) {
     console.error("init: 必要な DOM 要素が見つかりません。");
     return;
   }
 
-  // タブ切替イベントを登録する
-  tabButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const tabName = button.dataset.tab;
-      switchTab(tabName, tabButtons, tabPanels);
-
-      // 履歴タブを開いたときに最新の記録を取得する
-      if (tabName === "history") {
+  // ルーティングの初期化
+  initRouter({
+    tabButtons,
+    tabPanels,
+    onRouteChange: (route) => {
+      if (route === "history") {
         refreshHistory(db, historyList, historyStatus);
       }
+    },
+  });
+
+  // タブボタンはハッシュを変更するだけにする（実際の切替は router が行う）
+  tabButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      navigateTo(button.dataset.tab);
     });
   });
 
   dateInput.value = getTodayString();
 
   const typeRadios = form.querySelectorAll('input[name="type"]');
-  if (typeRadios.length === 0) {
-    console.error("init: 収支区分のラジオボタンが見つかりません。");
-    return;
-  }
-
   typeRadios.forEach((radio) => {
     radio.addEventListener("change", () => {
       updateCategoryOptions(categoryEl, radio.value);
@@ -237,45 +272,71 @@ async function init() {
     updateCategoryOptions(categoryEl, initialType.value);
   }
 
+  // 履歴の編集ボタン（イベント委譲でまとめて扱う）
+  historyList.addEventListener("click", async (event) => {
+    const editButton = event.target.closest(".btn-edit");
+    if (!editButton) return;
+
+    const id = Number(editButton.dataset.id);
+    try {
+      const record = await getRecord(db, id);
+      if (!record) {
+        historyStatus.textContent = "対象の記録が見つかりませんでした。";
+        return;
+      }
+      fillFormForEdit(record, form, categoryEl, dateInput, submitButton);
+      statusEl.textContent = "";
+      showErrors({});
+      navigateTo("form");
+    } catch (error) {
+      console.error("記録の取得に失敗しました:", error);
+      historyStatus.textContent = "記録の取得に失敗しました。";
+    }
+  });
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     if (!db) {
-      statusEl.textContent = "データベースに接続できていません。ページを再読み込みしてください。";
+      statusEl.textContent = "データベースに接続できませんでした。";
       return;
     }
 
     const input = {
       type:     form.querySelector('input[name="type"]:checked')?.value ?? "",
-      amount:   form.querySelector('#amount').value,
+      amount:   form.querySelector("#amount").value,
       category: categoryEl.value,
       date:     dateInput.value,
-      memo:     document.querySelector('#memo').value,
+      memo:     form.querySelector("#memo").value,
     };
 
     statusEl.textContent = "";
     showErrors({});
 
-    const { ok, errors } = await saveRecord(db, input);
+    // editingId の有無で新規登録・編集を分岐する
+    const result = editingId === null
+      ? await saveRecord(db, input)
+      : await updateExistingRecord(db, editingId, input);
 
-    if (!ok) {
-      showErrors(errors);
+    if (!result.ok) {
+      showErrors(result.errors);
       statusEl.textContent = "入力内容に誤りがあります。";
       return;
     }
 
-    statusEl.textContent = "記録を保存しました。";
-    form.reset();
+    const wasEditing = editingId !== null;
+    resetFormToNewMode(form, dateInput, categoryEl, submitButton);
 
-    dateInput.value = getTodayString();
-    updateCategoryOptions(categoryEl, "expense");
-    const expenseRadio = form.querySelector('input[name="type"][value="expense"]');
-    if (expenseRadio) {
-      expenseRadio.checked = true;
-    }
-
-    // 新規登録後に履歴を最新化しておく（履歴タブを開いたときにすぐ反映されるように）
+    // 履歴を最新化する
     refreshHistory(db, historyList, historyStatus);
+
+    if (wasEditing) {
+      // 編集後は履歴画面へ戻る
+      statusEl.textContent = "";
+      navigateTo("history");
+    } else {
+      statusEl.textContent = "記録を保存しました。";
+    }
   });
 }
 

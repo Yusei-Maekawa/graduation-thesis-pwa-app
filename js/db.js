@@ -53,13 +53,13 @@ function addRecord(db,record){
       //記録を追加する
       const request = store.add(record);
       //成功したら採番されたidを返す
-      request.onsuccess = (event) => {
-          resolve(event.target.result);
-      };
+    request.onsuccess = (event) => {
+      resolve(event.target.result);
+    };
       //失敗したらエラーを返す
-      request.onerror = (event) => {
-          reject(new Error(`記録の追加に失敗しました: ${event.target.error}`));
-      };
+    request.onerror = (event) => {
+      reject(new Error(`記録の追加に失敗しました: ${event.target.error}`));
+    };
   });
 }
 
@@ -86,4 +86,57 @@ function getAllRecords(db) {
   });
 }
 
-export { openDB, addRecord, getAllRecords, STORE_NAME };
+/**
+ * id を指定して記録を1件取得する。
+ * @param {IDBDatabase} db
+ * @param {number} id
+ * @returns {Promise<object|undefined>} 該当記録。なければ undefined
+ */
+function getRecordById(db, id) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readonly");
+    const store       = transaction.objectStore(STORE_NAME);
+    const request     = store.get(id);
+
+    request.onsuccess = (event) => {
+      resolve(event.target.result);
+    };
+
+    request.onerror = (event) => {
+      reject(new Error(`記録の取得に失敗しました: ${event.target.error}`));
+    };
+  });
+}
+
+/**
+ * 記録を更新する。record には既存の id を含める。
+ * put は同じ主キーが存在すれば上書き、なければ新規追加する。
+ * ここでは既存 id を含めて呼ぶため、上書きとして機能する。
+ * @param {IDBDatabase} db
+ * @param {object} record - id を含む記録オブジェクト
+ * @returns {Promise<number>} 更新した記録の id
+ */
+function updateRecord(db, record) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    const store       = transaction.objectStore(STORE_NAME);
+    const request     = store.put(record);
+
+    request.onsuccess = (event) => {
+      resolve(event.target.result);
+    };
+
+    request.onerror = (event) => {
+      reject(new Error(`記録の更新に失敗しました: ${event.target.error}`));
+    };
+  });
+}
+
+export {
+  openDB,
+  addRecord,
+  getAllRecords,
+  getRecordById,
+  updateRecord,
+  STORE_NAME,
+};
