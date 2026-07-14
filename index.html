@@ -120,6 +120,22 @@
 
     </main>
 
+    <!-- 削除確認ダイアログ：工程10でデザインを刷新する前提の最小構造 -->
+    <dialog id="delete-dialog" class="confirm-dialog" aria-labelledby="delete-dialog-title">
+      <form method="dialog" class="confirm-dialog-body">
+        <h2 id="delete-dialog-title" class="confirm-dialog-title">記録の削除</h2>
+        <p class="confirm-dialog-message">この記録を削除しますか？</p>
+        <p id="delete-target-info" class="confirm-dialog-target"></p>
+        <p class="confirm-dialog-note">削除した記録は元に戻せません。</p>
+
+        <div class="confirm-dialog-actions">
+          <!-- value でどちらが押されたか判別する -->
+          <button type="submit" value="cancel" class="btn-secondary">キャンセル</button>
+          <button type="submit" value="confirm" class="btn-danger" id="confirm-delete-button">削除する</button>
+        </div>
+      </form>
+    </dialog>
+
     <script type="module" src="js/main.js"></script>
   </body>
 </html>

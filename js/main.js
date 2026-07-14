@@ -4,6 +4,7 @@ import {
   getSortedRecords,
   getRecord,
   updateExistingRecord,
+  removeRecord,
 } from "./record-service.js";
 import { VALID_CATEGORIES } from "./validation.js";
 import { initRouter, navigateTo } from "./router.js";
@@ -29,6 +30,9 @@ const CATEGORY_LABELS = {
 
 // 現在編集中の記録の id。null のときは新規登録モード。
 let editingId = null;
+
+// 削除確認中の記録の id。null のときは削除対象なし。
+let pendingDeleteId = null;
 
 /**
  * 今日の日付を YYYY-MM-DD 形式で返す。
@@ -98,7 +102,7 @@ function formatAmount(amount) {
 }
 
 /**
- * 記録日（YYYY-MM-DD）を表示用に整形する。
+ * 記録日を表示用に整形する。
  * @param {string} dateStr
  * @returns {string}
  */
@@ -213,6 +217,23 @@ async function refreshHistory(db, listEl, statusEl) {
 }
 
 /**
+ * 削除対象の記録情報をダイアログへ表示し、ダイアログを開く。
+ * @param {object} record
+ * @param {HTMLElement} targetInfoEl
+ * @param {HTMLDialogElement} dialog
+ */
+function openDeleteDialog(record, targetInfoEl, dialog) {
+  pendingDeleteId = record.id;
+
+  const typeLabel     = record.type === "expense" ? "支出" : "収入";
+  const categoryLabel = CATEGORY_LABELS[record.type]?.[record.category] ?? record.category;
+  targetInfoEl.textContent =
+    `${formatDate(record.date)} / ${typeLabel} / ${categoryLabel} / ${formatAmount(record.amount)}`;
+
+  dialog.showModal();
+}
+
+/**
  * アプリケーションの初期化処理。
  */
 async function init() {
@@ -234,8 +255,13 @@ async function init() {
   const historyStatus = document.getElementById("history-status");
   const tabButtons    = Array.from(document.querySelectorAll(".tab-button"));
   const tabPanels     = Array.from(document.querySelectorAll(".tab-panel"));
+  const deleteDialog  = document.getElementById("delete-dialog");
+  const deleteTargetInfo = document.getElementById("delete-target-info");
 
-  if (!form || !dateInput || !categoryEl || !statusEl || !submitButton || !historyList || !historyStatus) {
+  if (
+    !form || !dateInput || !categoryEl || !statusEl || !submitButton ||
+    !historyList || !historyStatus || !deleteDialog || !deleteTargetInfo
+  ) {
     console.error("init: 必要な DOM 要素が見つかりません。");
     return;
   }
@@ -274,24 +300,61 @@ async function init() {
 
   // 履歴の編集ボタン（イベント委譲でまとめて扱う）
   historyList.addEventListener("click", async (event) => {
-    const editButton = event.target.closest(".btn-edit");
-    if (!editButton) return;
+    const editButton   = event.target.closest(".btn-edit");
+    const deleteButton = event.target.closest(".btn-delete");
 
-    const id = Number(editButton.dataset.id);
-    try {
-      const record = await getRecord(db, id);
-      if (!record) {
-        historyStatus.textContent = "対象の記録が見つかりませんでした。";
-        return;
+    if (editButton) {
+      const id = Number(editButton.dataset.id);
+      try {
+        const record = await getRecord(db, id);
+        if (!record) {
+          historyStatus.textContent = "対象の記録が見つかりませんでした。";
+          return;
+        }
+        fillFormForEdit(record, form, categoryEl, dateInput, submitButton);
+        statusEl.textContent = "";
+        showErrors({});
+        navigateTo("form");
+      } catch (error) {
+        console.error("記録の取得に失敗しました:", error);
+        historyStatus.textContent = "記録の取得に失敗しました。";
       }
-      fillFormForEdit(record, form, categoryEl, dateInput, submitButton);
-      statusEl.textContent = "";
-      showErrors({});
-      navigateTo("form");
-    } catch (error) {
-      console.error("記録の取得に失敗しました:", error);
-      historyStatus.textContent = "記録の取得に失敗しました。";
+      return;
     }
+
+    if (deleteButton) {
+      const id = Number(deleteButton.dataset.id);
+      try {
+        const record = await getRecord(db, id);
+        if (!record) {
+          historyStatus.textContent = "対象の記録が見つかりませんでした。";
+          return;
+        }
+        openDeleteDialog(record, deleteTargetInfo, deleteDialog);
+      } catch (error) {
+        console.error("記録の取得に失敗しました:", error);
+        historyStatus.textContent = "記録の取得に失敗しました。";
+      }
+    }
+  });
+
+  // 削除ダイアログの結果を処理する
+  deleteDialog.addEventListener("close", async () => {
+    // returnValue には押されたボタンの value が入る
+    const result = deleteDialog.returnValue;
+
+    if (result === "confirm" && pendingDeleteId !== null) {
+      try {
+        await removeRecord(db, pendingDeleteId);
+        historyStatus.textContent = "記録を削除しました。";
+        refreshHistory(db, historyList, historyStatus);
+      } catch (error) {
+        console.error("記録の削除に失敗しました:", error);
+        historyStatus.textContent = "記録の削除に失敗しました。";
+      }
+    }
+
+    pendingDeleteId = null;
   });
 
   form.addEventListener("submit", async (event) => {

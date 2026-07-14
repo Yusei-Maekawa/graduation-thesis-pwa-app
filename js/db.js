@@ -132,11 +132,34 @@ function updateRecord(db, record) {
   });
 }
 
+/**
+ * id を指定して記録を1件削除する。
+ * @param {IDBDatabase} db
+ * @param {number} id
+ * @returns {Promise<void>}
+ */
+function deleteRecord(db, id) {
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, "readwrite");
+    const store       = transaction.objectStore(STORE_NAME);
+    const request     = store.delete(id);
+
+    request.onsuccess = () => {
+      resolve();
+    };
+
+    request.onerror = (event) => {
+      reject(new Error(`記録の削除に失敗しました: ${event.target.error}`));
+    };
+  });
+}
+
 export {
   openDB,
   addRecord,
   getAllRecords,
   getRecordById,
   updateRecord,
+  deleteRecord,
   STORE_NAME,
 };
