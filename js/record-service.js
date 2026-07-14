@@ -3,11 +3,12 @@ import {
   getAllRecords,
   getRecordById,
   updateRecord,
+  deleteRecord,
 } from "./db.js";
 import { validateRecord } from "./validation.js";
 
 /**
- * 入力値を検証し、問題がなければ家計記録を IndexedDB へ保存する。
+ * 入力値を検証し、問題がなければ家計記録を新規保存する。
  * @param {IDBDatabase} db
  * @param {object} input - フォームから取り出した入力値
  * @returns {Promise<{ok: boolean, errors: object}>}
@@ -94,9 +95,20 @@ async function updateExistingRecord(db, id, input) {
   return { ok: true, errors: {} };
 }
 
+/**
+ * id を指定して記録を削除する。
+ * @param {IDBDatabase} db
+ * @param {number} id
+ * @returns {Promise<void>}
+ */
+async function removeRecord(db, id) {
+  await deleteRecord(db, id);
+}
+
 export {
   saveRecord,
   getSortedRecords,
   getRecord,
   updateExistingRecord,
+  removeRecord,
 };
