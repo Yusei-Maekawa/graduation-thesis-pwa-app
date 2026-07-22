@@ -11,13 +11,6 @@
       <h1>家計簿</h1>
     </header>
 
-    <nav class="tab-nav" aria-label="画面切替">
-      <button type="button" class="tab-button" data-tab="home" aria-current="false">ホーム</button>
-      <button type="button" class="tab-button" data-tab="form" aria-current="true">記録入力</button>
-      <button type="button" class="tab-button" data-tab="history" aria-current="false">履歴</button>
-      <button type="button" class="tab-button" data-tab="summary" aria-current="false">集計</button>
-    </nav>
-
     <main class="app-main">
 
       <section id="tab-home" class="tab-panel" hidden aria-labelledby="home-heading">
@@ -120,11 +113,9 @@
         <ul id="history-list" class="history-list"></ul>
       </section>
 
-      <!-- 集計画面 -->
       <section id="tab-summary" class="tab-panel" hidden aria-labelledby="summary-heading">
         <h2 id="summary-heading">集計</h2>
 
-        <!-- 対象月の切替 -->
         <div class="month-selector">
           <button type="button" class="month-nav-button" id="prev-month-button" aria-label="前月へ">‹ 前月</button>
           <div class="month-selector-current">
@@ -134,7 +125,6 @@
           <button type="button" class="month-nav-button" id="next-month-button" aria-label="翌月へ">翌月 ›</button>
         </div>
 
-        <!-- 月別集計 -->
         <div class="summary-totals">
           <div class="summary-card">
             <span class="summary-card-label">収入合計</span>
@@ -150,12 +140,19 @@
           </div>
         </div>
 
-        <!-- カテゴリ別支出 -->
         <h3 class="summary-subheading">カテゴリ別支出</h3>
         <ul id="summary-category-list" class="summary-category-list"></ul>
       </section>
 
     </main>
+
+    <!-- ナビゲーション：スマホでは下部固定タブバー、PCでは上部タブ（CSSで制御） -->
+    <nav class="tab-nav" aria-label="画面切替">
+      <button type="button" class="tab-button" data-tab="home" aria-current="false">ホーム</button>
+      <button type="button" class="tab-button" data-tab="form" aria-current="true">記録入力</button>
+      <button type="button" class="tab-button" data-tab="history" aria-current="false">履歴</button>
+      <button type="button" class="tab-button" data-tab="summary" aria-current="false">集計</button>
+    </nav>
 
     <dialog id="delete-dialog" class="confirm-dialog" aria-labelledby="delete-dialog-title">
       <form method="dialog" class="confirm-dialog-body">
