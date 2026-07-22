@@ -11,7 +11,6 @@
       <h1>家計簿</h1>
     </header>
 
-    <!-- 暫定タブ切替：正式なルーティングは工程6の前に決定する（TBD-003） -->
     <nav class="tab-nav" aria-label="画面切替">
       <button type="button" class="tab-button" data-tab="home" aria-current="false">ホーム</button>
       <button type="button" class="tab-button" data-tab="form" aria-current="true">記録入力</button>
@@ -21,10 +20,22 @@
 
     <main class="app-main">
 
-      <!-- ホーム画面（工程8で実装） -->
-      <section id="tab-home" class="tab-panel" hidden>
-        <h2>ホーム</h2>
-        <p class="placeholder-text">（ホーム画面はまだ実装されていません）</p>
+      <!-- ホーム画面 -->
+      <section id="tab-home" class="tab-panel" hidden aria-labelledby="home-heading">
+        <h2 id="home-heading">ホーム</h2>
+
+        <div class="home-summary">
+          <div class="summary-card">
+            <span class="summary-card-label">今日の支出</span>
+            <span class="summary-card-value" id="home-today-expense">0円</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-card-label">今月の支出</span>
+            <span class="summary-card-value" id="home-month-expense">0円</span>
+          </div>
+        </div>
+
+        <button type="button" class="btn-primary" id="home-add-button">記録を追加する</button>
       </section>
 
       <!-- 記録入力画面 -->
@@ -112,7 +123,7 @@
         <ul id="history-list" class="history-list"></ul>
       </section>
 
-      <!-- 集計画面（工程8・9で実装） -->
+      <!-- 集計画面（工程9で実装） -->
       <section id="tab-summary" class="tab-panel" hidden>
         <h2>集計</h2>
         <p class="placeholder-text">（集計画面はまだ実装されていません）</p>
@@ -120,7 +131,7 @@
 
     </main>
 
-    <!-- 削除確認ダイアログ：工程10でデザインを刷新する前提の最小構造 -->
+    <!-- 削除確認ダイアログ -->
     <dialog id="delete-dialog" class="confirm-dialog" aria-labelledby="delete-dialog-title">
       <form method="dialog" class="confirm-dialog-body">
         <h2 id="delete-dialog-title" class="confirm-dialog-title">記録の削除</h2>
@@ -129,7 +140,6 @@
         <p class="confirm-dialog-note">削除した記録は元に戻せません。</p>
 
         <div class="confirm-dialog-actions">
-          <!-- value でどちらが押されたか判別する -->
           <button type="submit" value="cancel" class="btn-secondary">キャンセル</button>
           <button type="submit" value="confirm" class="btn-danger" id="confirm-delete-button">削除する</button>
         </div>

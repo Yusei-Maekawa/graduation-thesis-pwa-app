@@ -8,6 +8,7 @@ import {
 } from "./record-service.js";
 import { VALID_CATEGORIES } from "./validation.js";
 import { initRouter, navigateTo } from "./router.js";
+import { sumTodayExpense, sumMonthExpense } from "./summary-service.js";
 
 const CATEGORY_LABELS = {
   expense: {
@@ -28,10 +29,7 @@ const CATEGORY_LABELS = {
   },
 };
 
-// 現在編集中の記録の id。null のときは新規登録モード。
 let editingId = null;
-
-// 削除確認中の記録の id。null のときは削除対象なし。
 let pendingDeleteId = null;
 
 /**
@@ -44,6 +42,17 @@ function getTodayString() {
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day   = String(today.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+/**
+ * 今月を YYYY-MM 形式で返す。
+ * @returns {string}
+ */
+function getCurrentYearMonth() {
+  const today = new Date();
+  const year  = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
 }
 
 /**
@@ -146,7 +155,6 @@ function fillFormForEdit(record, form, categoryEl, dateInput, submitButton) {
     typeRadio.checked = true;
   }
 
-  // 収支区分に対応するカテゴリを先に用意してから値を選択する
   updateCategoryOptions(categoryEl, record.type);
   categoryEl.value = record.category;
 
@@ -217,6 +225,25 @@ async function refreshHistory(db, listEl, statusEl) {
 }
 
 /**
+ * ホーム画面の集計値を再計算して描画する。
+ * @param {IDBDatabase} db
+ * @param {HTMLElement} todayEl
+ * @param {HTMLElement} monthEl
+ */
+async function refreshHome(db, todayEl, monthEl) {
+  try {
+    const records = await getSortedRecords(db);
+    const today     = getTodayString();
+    const yearMonth = getCurrentYearMonth();
+
+    todayEl.textContent = formatAmount(sumTodayExpense(records, today));
+    monthEl.textContent = formatAmount(sumMonthExpense(records, yearMonth));
+  } catch (error) {
+    console.error("ホームの集計に失敗しました:", error);
+  }
+}
+
+/**
  * 削除対象の記録情報をダイアログへ表示し、ダイアログを開く。
  * @param {object} record
  * @param {HTMLElement} targetInfoEl
@@ -246,21 +273,25 @@ async function init() {
     return;
   }
 
-  const form          = document.getElementById("record-form");
-  const dateInput     = document.getElementById("date");
-  const categoryEl    = document.getElementById("category");
-  const statusEl      = document.getElementById("form-status");
-  const submitButton  = form?.querySelector('button[type="submit"]');
-  const historyList   = document.getElementById("history-list");
-  const historyStatus = document.getElementById("history-status");
-  const tabButtons    = Array.from(document.querySelectorAll(".tab-button"));
-  const tabPanels     = Array.from(document.querySelectorAll(".tab-panel"));
-  const deleteDialog  = document.getElementById("delete-dialog");
+  const form             = document.getElementById("record-form");
+  const dateInput        = document.getElementById("date");
+  const categoryEl       = document.getElementById("category");
+  const statusEl         = document.getElementById("form-status");
+  const submitButton     = form?.querySelector('button[type="submit"]');
+  const historyList      = document.getElementById("history-list");
+  const historyStatus    = document.getElementById("history-status");
+  const tabButtons       = Array.from(document.querySelectorAll(".tab-button"));
+  const tabPanels        = Array.from(document.querySelectorAll(".tab-panel"));
+  const deleteDialog     = document.getElementById("delete-dialog");
   const deleteTargetInfo = document.getElementById("delete-target-info");
+  const homeTodayExpense = document.getElementById("home-today-expense");
+  const homeMonthExpense = document.getElementById("home-month-expense");
+  const homeAddButton    = document.getElementById("home-add-button");
 
   if (
     !form || !dateInput || !categoryEl || !statusEl || !submitButton ||
-    !historyList || !historyStatus || !deleteDialog || !deleteTargetInfo
+    !historyList || !historyStatus || !deleteDialog || !deleteTargetInfo ||
+    !homeTodayExpense || !homeMonthExpense || !homeAddButton
   ) {
     console.error("init: 必要な DOM 要素が見つかりません。");
     return;
@@ -273,6 +304,8 @@ async function init() {
     onRouteChange: (route) => {
       if (route === "history") {
         refreshHistory(db, historyList, historyStatus);
+      } else if (route === "home") {
+        refreshHome(db, homeTodayExpense, homeMonthExpense);
       }
     },
   });
@@ -282,6 +315,11 @@ async function init() {
     button.addEventListener("click", () => {
       navigateTo(button.dataset.tab);
     });
+  });
+
+  // ホームの「記録を追加する」ボタンで記録入力画面へ移動する
+  homeAddButton.addEventListener("click", () => {
+    navigateTo("form");
   });
 
   dateInput.value = getTodayString();
@@ -348,6 +386,8 @@ async function init() {
         await removeRecord(db, pendingDeleteId);
         historyStatus.textContent = "記録を削除しました。";
         refreshHistory(db, historyList, historyStatus);
+        // 削除で集計が変わるため、ホームの値も再計算しておく
+        refreshHome(db, homeTodayExpense, homeMonthExpense);
       } catch (error) {
         console.error("記録の削除に失敗しました:", error);
         historyStatus.textContent = "記録の削除に失敗しました。";
@@ -376,10 +416,10 @@ async function init() {
     statusEl.textContent = "";
     showErrors({});
 
-    // editingId の有無で新規登録・編集を分岐する
-    const result = editingId === null
-      ? await saveRecord(db, input)
-      : await updateExistingRecord(db, editingId, input);
+    const wasEditing = editingId !== null;
+    const result = wasEditing
+      ? await updateExistingRecord(db, editingId, input)
+      : await saveRecord(db, input);
 
     if (!result.ok) {
       showErrors(result.errors);
@@ -387,18 +427,20 @@ async function init() {
       return;
     }
 
-    const wasEditing = editingId !== null;
     resetFormToNewMode(form, dateInput, categoryEl, submitButton);
 
     // 履歴を最新化する
     refreshHistory(db, historyList, historyStatus);
+    refreshHome(db, homeTodayExpense, homeMonthExpense);
 
     if (wasEditing) {
       // 編集後は履歴画面へ戻る
       statusEl.textContent = "";
       navigateTo("history");
     } else {
-      statusEl.textContent = "記録を保存しました。";
+      // 新規登録後はホーム画面へ戻る（specification.md 7.1節）
+      statusEl.textContent = "";
+      navigateTo("home");
     }
   });
 }

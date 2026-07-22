@@ -337,3 +337,34 @@ legend {
 .btn-danger:hover {
   background-color: #a93226;
 }
+
+/* ===========================
+   ホーム画面の集計
+=========================== */
+
+.home-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.summary-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #fafafa;
+}
+
+.summary-card-label {
+  font-size: 0.9rem;
+  color: #555555;
+}
+
+.summary-card-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+}
