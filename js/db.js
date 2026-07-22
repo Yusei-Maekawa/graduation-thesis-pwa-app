@@ -154,6 +154,30 @@ function deleteRecord(db, id) {
   });
 }
 
+/**
+ * 永続ストレージを要求する。
+ * ブラウザが許可するとは限らない（拒否されてもアプリは動作する）。
+ * @returns {Promise<boolean>} 永続化が許可されたか。API非対応時は false。
+ */
+async function requestPersistentStorage() {
+  // Storage API 非対応のブラウザでは何もしない
+  if (!navigator.storage || !navigator.storage.persist) {
+    return false;
+  }
+  return navigator.storage.persist();
+}
+
+/**
+ * 現在の永続化状態を取得する。
+ * @returns {Promise<boolean>} 永続化されているか。API非対応時は false。
+ */
+async function isStoragePersisted() {
+  if (!navigator.storage || !navigator.storage.persisted) {
+    return false;
+  }
+  return navigator.storage.persisted();
+}
+
 export {
   openDB,
   addRecord,
@@ -161,5 +185,7 @@ export {
   getRecordById,
   updateRecord,
   deleteRecord,
+  requestPersistentStorage,
+  isStoragePersisted,
   STORE_NAME,
 };

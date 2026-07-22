@@ -1,4 +1,4 @@
-import { openDB } from "./db.js";
+import { openDB , requestPersistentStorage, isStoragePersisted} from "./db.js";
 import {
   saveRecord,
   getSortedRecords,
@@ -359,6 +359,18 @@ async function init() {
   let db;
   try {
     db = await openDB();
+    // 永続ストレージを要求する（データの自動削除を防ぐ。許可はブラウザ判断）
+    try {
+      const alreadyPersisted = await isStoragePersisted();
+      if (alreadyPersisted) {
+        console.log("ストレージは既に永続化されています。");
+      } else {
+        const granted = await requestPersistentStorage();
+        console.log("永続ストレージ要求の結果:", granted ? "許可されました" : "許可されませんでした");
+      }
+    } catch (error) {
+      console.error("永続ストレージの要求中にエラーが発生しました:", error);
+  }
     console.log("IndexedDB に接続しました:", db.name);
   } catch (error) {
     console.error("IndexedDB の接続に失敗しました:", error);
