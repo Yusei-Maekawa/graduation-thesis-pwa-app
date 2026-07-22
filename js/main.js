@@ -585,3 +585,18 @@ async function init() {
 }
 
 document.addEventListener("DOMContentLoaded", init);
+
+
+// Service Worker を登録する（PWA・オフライン対応）
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("./service-worker.js")
+      .then((registration) => {
+        console.log("Service Worker を登録しました:", registration.scope);
+      })
+      .catch((error) => {
+        console.error("Service Worker の登録に失敗しました:", error);
+      });
+  });
+}

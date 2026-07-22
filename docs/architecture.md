@@ -170,7 +170,7 @@ pwa-household-accounting-app/
 ### 6.3 `js/main.js`
 
 - アプリケーションの初期化
-- Service Workerの登録
+- Service Workerの登録      工程12
 - 初期画面の表示
 - 各機能の呼び出し
 
@@ -254,7 +254,7 @@ IndexedDBの詳細な操作は `db.js`へ委譲する。
 
 UI用ファイルから直接IndexedDBを操作せず、`record-service.js`及び`summary-service.js`を介して処理する。
 
-### 6.11 `service-worker.js`
+### 6.11 `service-worker.js`   工程12
 
 - アプリケーションファイルのキャッシュ
 - オフライン時のキャッシュ利用
@@ -913,6 +913,22 @@ IndexedDBから取得またはIndexedDBへ保存
 ---
 
 ### 工程12　Service Worker及びキャッシュ
+
+#### 初回アクセス（オンライン）
+1. ブラウザが index.html を読み込む
+2. main.js が Service Worker を登録する
+3. Service Worker の install イベントが発生する
+4. キャッシュを開き、アプリファイル一式を保存する
+5. activate イベントで、古いキャッシュがあれば削除する
+6. 以降、fetch イベントが全リクエストを仲介する
+
+#### 2回目以降・オフライン
+1. ブラウザがファイルを要求する
+2. Service Worker の fetch イベントが受け取る
+3. まずキャッシュを探す
+4a. キャッシュにあれば、それを返す（ネットワーク不要）
+4b. なければネットワークから取得する
+5. 画面が表示される
 
 #### 実装内容
 
