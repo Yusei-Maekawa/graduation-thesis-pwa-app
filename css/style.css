@@ -570,6 +570,7 @@ legend {
 /* ===========================
    画面適応：タブレット・PC（768px以上）
    タブを上部固定にし、ヘッダー直下へ配置する
+   （HTML 上 tab-nav は body 末尾のため、static だと下に出る）
 =========================== */
 
 @media (min-width: 768px) {
@@ -621,4 +622,29 @@ legend {
   * {
     transition: none !important;
   }
+}
+
+/* ===========================
+   必須・任意ラベル
+=========================== */
+
+.label-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 400;
+  border-radius: var(--radius-pill);
+  vertical-align: middle;
+}
+
+.label-badge--required {
+  color: #ffffff;
+  background-color: var(--color-expense);
+}
+
+.label-badge--optional {
+  color: var(--color-text-sub);
+  background-color: var(--color-surface-sub);
+  border: 1px solid var(--color-border);
 }
