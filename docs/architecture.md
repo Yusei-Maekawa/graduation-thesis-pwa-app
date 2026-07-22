@@ -98,7 +98,7 @@ IndexedDBから家計記録を取得し、記録日の新しい順に表示す�
 
 各記録から編集及び削除を実行できるようにする。
 
-### 4.4 集計画面
+### 4.4 集計画面   工程9
 
 IndexedDBから取得した家計記録を基に、次の値を算出する。
 
@@ -223,7 +223,7 @@ IndexedDBへのアクセスを担当する。
 
 IndexedDBの詳細な操作は `db.js`へ委譲する。
 
-### 6.8 `js/summary-service.js`      工程8
+### 6.8 `js/summary-service.js`      工程8  工程9
 
 家計記録の集計処理を担当する。
 
@@ -812,6 +812,19 @@ IndexedDBから取得またはIndexedDBへ保存
 ---
 
 ### 工程9　月別及びカテゴリ別集計
+
+1. 集計タブをクリック
+2. onRouteChange("summary") が呼ばれる
+3. 対象月が未設定なら今月を初期値にする
+4. refreshSummary(db) が呼ばれる
+5. getSortedRecords(db) で全記録を取得する
+6. summary-service.js で対象月の収入・支出・収支を算出する
+7. summary-service.js で対象月のカテゴリ別支出を算出する（金額降順）
+8. 対象月・各合計・カテゴリ別支出を画面へ描画する
+
+1. 「前月」ボタン、または month 入力を操作する
+2. currentYearMonth を更新する
+3. refreshSummary(db) を呼び、対象月の集計を再描画する
 
 #### 実装内容
 
