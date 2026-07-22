@@ -20,7 +20,6 @@
 
     <main class="app-main">
 
-      <!-- ホーム画面 -->
       <section id="tab-home" class="tab-panel" hidden aria-labelledby="home-heading">
         <h2 id="home-heading">ホーム</h2>
 
@@ -38,7 +37,6 @@
         <button type="button" class="btn-primary" id="home-add-button">記録を追加する</button>
       </section>
 
-      <!-- 記録入力画面 -->
       <section id="tab-form" class="tab-panel" aria-labelledby="form-heading">
         <h2 id="form-heading">記録を入力する</h2>
 
@@ -109,7 +107,6 @@
         </form>
       </section>
 
-      <!-- 履歴画面 -->
       <section id="tab-history" class="tab-panel" hidden aria-labelledby="history-heading">
         <h2 id="history-heading">履歴</h2>
 
@@ -123,15 +120,43 @@
         <ul id="history-list" class="history-list"></ul>
       </section>
 
-      <!-- 集計画面（工程9で実装） -->
-      <section id="tab-summary" class="tab-panel" hidden>
-        <h2>集計</h2>
-        <p class="placeholder-text">（集計画面はまだ実装されていません）</p>
+      <!-- 集計画面 -->
+      <section id="tab-summary" class="tab-panel" hidden aria-labelledby="summary-heading">
+        <h2 id="summary-heading">集計</h2>
+
+        <!-- 対象月の切替 -->
+        <div class="month-selector">
+          <button type="button" class="month-nav-button" id="prev-month-button" aria-label="前月へ">‹ 前月</button>
+          <div class="month-selector-current">
+            <label for="summary-month" class="visually-hidden">対象月</label>
+            <input type="month" id="summary-month" class="month-input" />
+          </div>
+          <button type="button" class="month-nav-button" id="next-month-button" aria-label="翌月へ">翌月 ›</button>
+        </div>
+
+        <!-- 月別集計 -->
+        <div class="summary-totals">
+          <div class="summary-card">
+            <span class="summary-card-label">収入合計</span>
+            <span class="summary-card-value" id="summary-income">0円</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-card-label">支出合計</span>
+            <span class="summary-card-value" id="summary-expense">0円</span>
+          </div>
+          <div class="summary-card">
+            <span class="summary-card-label">収支</span>
+            <span class="summary-card-value" id="summary-balance">0円</span>
+          </div>
+        </div>
+
+        <!-- カテゴリ別支出 -->
+        <h3 class="summary-subheading">カテゴリ別支出</h3>
+        <ul id="summary-category-list" class="summary-category-list"></ul>
       </section>
 
     </main>
 
-    <!-- 削除確認ダイアログ -->
     <dialog id="delete-dialog" class="confirm-dialog" aria-labelledby="delete-dialog-title">
       <form method="dialog" class="confirm-dialog-body">
         <h2 id="delete-dialog-title" class="confirm-dialog-title">記録の削除</h2>

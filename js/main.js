@@ -8,7 +8,13 @@ import {
 } from "./record-service.js";
 import { VALID_CATEGORIES } from "./validation.js";
 import { initRouter, navigateTo } from "./router.js";
-import { sumTodayExpense, sumMonthExpense } from "./summary-service.js";
+import {
+  sumTodayExpense,
+  sumMonthExpense,
+  sumMonthIncome,
+  calcMonthBalance,
+  sumExpenseByCategory,
+} from "./summary-service.js";
 
 const CATEGORY_LABELS = {
   expense: {
@@ -32,6 +38,9 @@ const CATEGORY_LABELS = {
 let editingId = null;
 let pendingDeleteId = null;
 
+// 集計画面で表示している対象月（"YYYY-MM"）。null なら未設定（初回に今月を入れる）。
+let currentYearMonth = null;
+
 /**
  * 今日の日付を YYYY-MM-DD 形式で返す。
  * @returns {string}
@@ -53,6 +62,31 @@ function getCurrentYearMonth() {
   const year  = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, "0");
   return `${year}-${month}`;
+}
+
+/**
+ * "YYYY-MM" を指定した月数だけ移動した "YYYY-MM" を返す。
+ * @param {string} yearMonth - "YYYY-MM"
+ * @param {number} diff - 移動する月数（-1で前月、+1で翌月）
+ * @returns {string}
+ */
+function shiftYearMonth(yearMonth, diff) {
+  const [year, month] = yearMonth.split("-").map(Number);
+  // Date を使って月をまたぐ計算を安全に行う（12月→1月などを自動処理）
+  const date = new Date(year, month - 1 + diff, 1);
+  const newYear  = date.getFullYear();
+  const newMonth = String(date.getMonth() + 1).padStart(2, "0");
+  return `${newYear}-${newMonth}`;
+}
+
+/**
+ * "YYYY-MM" を表示用（YYYY年M月）に整形する。
+ * @param {string} yearMonth
+ * @returns {string}
+ */
+function formatYearMonth(yearMonth) {
+  const [year, month] = yearMonth.split("-");
+  return `${year}年${Number(month)}月`;
 }
 
 /**
@@ -244,6 +278,64 @@ async function refreshHome(db, todayEl, monthEl) {
 }
 
 /**
+ * カテゴリ別支出のリストを描画する。
+ * @param {HTMLElement} listEl
+ * @param {{category: string, total: number}[]} categoryTotals
+ */
+function renderCategoryList(listEl, categoryTotals) {
+  listEl.innerHTML = "";
+
+  if (categoryTotals.length === 0) {
+    const emptyItem = document.createElement("li");
+    emptyItem.className   = "summary-category-empty";
+    emptyItem.textContent = "支出の記録がありません。";
+    listEl.appendChild(emptyItem);
+    return;
+  }
+
+  categoryTotals.forEach(({ category, total }) => {
+    const item = document.createElement("li");
+    item.className = "summary-category-item";
+
+    const label = CATEGORY_LABELS.expense[category] ?? category;
+    item.innerHTML = `
+      <span class="summary-category-name">${label}</span>
+      <span class="summary-category-total">${formatAmount(total)}</span>
+    `;
+    listEl.appendChild(item);
+  });
+}
+
+/**
+ * 集計画面を、現在の対象月（currentYearMonth）で再計算して描画する。
+ * @param {IDBDatabase} db
+ * @param {object} elements - 集計画面の各表示要素
+ */
+async function refreshSummary(db, elements) {
+  const { monthInput, incomeEl, expenseEl, balanceEl, categoryListEl } = elements;
+
+  try {
+    const records = await getSortedRecords(db);
+
+    const income  = sumMonthIncome(records, currentYearMonth);
+    const expense = sumMonthExpense(records, currentYearMonth);
+    const balance = calcMonthBalance(income, expense);
+    const categoryTotals = sumExpenseByCategory(records, currentYearMonth);
+
+    // month 入力の表示を対象月に合わせる
+    monthInput.value = currentYearMonth;
+
+    incomeEl.textContent  = formatAmount(income);
+    expenseEl.textContent = formatAmount(expense);
+    balanceEl.textContent = formatAmount(balance);
+
+    renderCategoryList(categoryListEl, categoryTotals);
+  } catch (error) {
+    console.error("集計に失敗しました:", error);
+  }
+}
+
+/**
  * 削除対象の記録情報をダイアログへ表示し、ダイアログを開く。
  * @param {object} record
  * @param {HTMLElement} targetInfoEl
@@ -288,10 +380,24 @@ async function init() {
   const homeMonthExpense = document.getElementById("home-month-expense");
   const homeAddButton    = document.getElementById("home-add-button");
 
+  // 集計画面の要素
+  const summaryElements = {
+    monthInput:     document.getElementById("summary-month"),
+    incomeEl:       document.getElementById("summary-income"),
+    expenseEl:      document.getElementById("summary-expense"),
+    balanceEl:      document.getElementById("summary-balance"),
+    categoryListEl: document.getElementById("summary-category-list"),
+  };
+  const prevMonthButton = document.getElementById("prev-month-button");
+  const nextMonthButton = document.getElementById("next-month-button");
+
   if (
     !form || !dateInput || !categoryEl || !statusEl || !submitButton ||
     !historyList || !historyStatus || !deleteDialog || !deleteTargetInfo ||
-    !homeTodayExpense || !homeMonthExpense || !homeAddButton
+    !homeTodayExpense || !homeMonthExpense || !homeAddButton ||
+    !summaryElements.monthInput || !summaryElements.incomeEl ||
+    !summaryElements.expenseEl || !summaryElements.balanceEl ||
+    !summaryElements.categoryListEl || !prevMonthButton || !nextMonthButton
   ) {
     console.error("init: 必要な DOM 要素が見つかりません。");
     return;
@@ -306,6 +412,12 @@ async function init() {
         refreshHistory(db, historyList, historyStatus);
       } else if (route === "home") {
         refreshHome(db, homeTodayExpense, homeMonthExpense);
+      } else if (route === "summary") {
+        // 対象月が未設定なら今月を初期値にする
+        if (currentYearMonth === null) {
+          currentYearMonth = getCurrentYearMonth();
+        }
+        refreshSummary(db, summaryElements);
       }
     },
   });
@@ -320,6 +432,26 @@ async function init() {
   // ホームの「記録を追加する」ボタンで記録入力画面へ移動する
   homeAddButton.addEventListener("click", () => {
     navigateTo("form");
+  });
+
+  // 対象月の切替：前月ボタン
+  prevMonthButton.addEventListener("click", () => {
+    currentYearMonth = shiftYearMonth(currentYearMonth, -1);
+    refreshSummary(db, summaryElements);
+  });
+
+  // 対象月の切替：翌月ボタン
+  nextMonthButton.addEventListener("click", () => {
+    currentYearMonth = shiftYearMonth(currentYearMonth, 1);
+    refreshSummary(db, summaryElements);
+  });
+
+  // 対象月の切替：month 入力
+  summaryElements.monthInput.addEventListener("change", (event) => {
+    const value = event.target.value;
+    // month 入力が空になる場合があるため、その場合は今月へ戻す
+    currentYearMonth = value || getCurrentYearMonth();
+    refreshSummary(db, summaryElements);
   });
 
   dateInput.value = getTodayString();
@@ -388,6 +520,10 @@ async function init() {
         refreshHistory(db, historyList, historyStatus);
         // 削除で集計が変わるため、ホームの値も再計算しておく
         refreshHome(db, homeTodayExpense, homeMonthExpense);
+        // 集計画面の対象月が設定済みなら再計算する
+        if (currentYearMonth !== null) {
+          refreshSummary(db, summaryElements);
+        }
       } catch (error) {
         console.error("記録の削除に失敗しました:", error);
         historyStatus.textContent = "記録の削除に失敗しました。";
@@ -432,6 +568,9 @@ async function init() {
     // 履歴を最新化する
     refreshHistory(db, historyList, historyStatus);
     refreshHome(db, homeTodayExpense, homeMonthExpense);
+    if (currentYearMonth !== null) {
+      refreshSummary(db, summaryElements);
+    }
 
     if (wasEditing) {
       // 編集後は履歴画面へ戻る

@@ -1,9 +1,8 @@
 /**
  * 今日の支出合計を算出する。
- * type が "expense" かつ date が today と一致する記録の amount を合計する。
- * @param {object[]} records - 家計記録の配列
- * @param {string} today - "YYYY-MM-DD" 形式の当日
- * @returns {number} 今日の支出合計
+ * @param {object[]} records
+ * @param {string} today - "YYYY-MM-DD"
+ * @returns {number}
  */
 function sumTodayExpense(records, today) {
     return records
@@ -12,11 +11,10 @@ function sumTodayExpense(records, today) {
   }
   
   /**
-   * 今月の支出合計を算出する。
-   * type が "expense" かつ date が yearMonth で始まる記録の amount を合計する。
-   * @param {object[]} records - 家計記録の配列
-   * @param {string} yearMonth - "YYYY-MM" 形式の対象月
-   * @returns {number} 今月の支出合計
+   * 対象月の支出合計を算出する。
+   * @param {object[]} records
+   * @param {string} yearMonth - "YYYY-MM"
+   * @returns {number}
    */
   function sumMonthExpense(records, yearMonth) {
     return records
@@ -24,4 +22,54 @@ function sumTodayExpense(records, today) {
       .reduce((total, record) => total + record.amount, 0);
   }
   
-  export { sumTodayExpense, sumMonthExpense };
+  /**
+   * 対象月の収入合計を算出する。
+   * @param {object[]} records
+   * @param {string} yearMonth - "YYYY-MM"
+   * @returns {number}
+   */
+  function sumMonthIncome(records, yearMonth) {
+    return records
+      .filter((record) => record.type === "income" && record.date.startsWith(yearMonth))
+      .reduce((total, record) => total + record.amount, 0);
+  }
+  
+  /**
+   * 収支（収入合計 - 支出合計）を算出する。
+   * @param {number} income
+   * @param {number} expense
+   * @returns {number}
+   */
+  function calcMonthBalance(income, expense) {
+    return income - expense;
+  }
+  
+  /**
+   * 対象月のカテゴリ別支出を、金額の大きい順の配列で返す。
+   * @param {object[]} records
+   * @param {string} yearMonth - "YYYY-MM"
+   * @returns {{category: string, total: number}[]}
+   */
+  function sumExpenseByCategory(records, yearMonth) {
+    const totals = {};
+  
+    records
+      .filter((record) => record.type === "expense" && record.date.startsWith(yearMonth))
+      .forEach((record) => {
+        // カテゴリごとに金額を積み上げる
+        totals[record.category] = (totals[record.category] ?? 0) + record.amount;
+      });
+  
+    // オブジェクトを配列に変換し、金額の大きい順に並べ替える
+    return Object.entries(totals)
+      .map(([category, total]) => ({ category, total }))
+      .sort((a, b) => b.total - a.total);
+  }
+  
+  export {
+    sumTodayExpense,
+    sumMonthExpense,
+    sumMonthIncome,
+    calcMonthBalance,
+    sumExpenseByCategory,
+  };
