@@ -1,5 +1,44 @@
 /* ===========================
-   ベースリセットと基本設定
+   デザイントークン
+=========================== */
+
+:root {
+  /* 色：柔らかい青系 */
+  --color-bg:            #f4f7fb;
+  --color-surface:       #ffffff;
+  --color-surface-sub:   #f7f9fc;
+  --color-primary:       #4a80d4;
+  --color-primary-dark:  #3f6fc0;
+  --color-expense:       #e0715f;
+  --color-expense-dark:  #cf5f4d;
+  --color-income:        #4a80d4;
+  --color-text:          #2c3444;
+  --color-text-sub:      #6b7688;
+  --color-border:        #e3e9f2;
+  --color-danger:        #e0715f;
+  --color-danger-dark:   #cf5f4d;
+
+  /* 角丸 */
+  --radius-card:   16px;
+  --radius-field:  12px;
+  --radius-pill:   999px;
+
+  /* 余白 */
+  --space-xs:  0.25rem;
+  --space-sm:  0.5rem;
+  --space-md:  0.75rem;
+  --space-lg:  1rem;
+  --space-xl:  1.5rem;
+
+  /* 下部タブバーの高さ（スマホ：本文の下余白に使う） */
+  --bottom-nav-height: 4.25rem;
+  /* PC上部固定時のヘッダー・タブ高さ（本文の上余白に使う） */
+  --header-height: 3.5rem;
+  --top-nav-height: 3rem;
+}
+
+/* ===========================
+   ベース
 =========================== */
 
 *,
@@ -11,10 +50,16 @@
 body {
   margin: 0;
   font-size: 1rem;
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
   line-height: 1.6;
-  color: #1a1a1a;
-  background-color: #f5f5f5;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  /* 下部タブバーに隠れないよう本文の下に余白を確保する */
+  padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+}
+
+h1, h2, h3 {
+  color: var(--color-text);
 }
 
 /* ===========================
@@ -22,72 +67,98 @@ body {
 =========================== */
 
 .app-header {
-  padding: 0.75rem 1rem;
-  background-color: #ffffff;
-  border-bottom: 1px solid #dddddd;
+  padding: var(--space-md) var(--space-lg);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .app-header h1 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
+  font-weight: 700;
 }
 
 /* ===========================
-   タブナビゲーション
-=========================== */
-
-.tab-nav {
-  display: flex;
-  background-color: #ffffff;
-  border-bottom: 1px solid #dddddd;
-  /* 画面幅が狭い場合に横スクロールできるようにする */
-  overflow-x: auto;
-}
-
-.tab-button {
-  flex: 1;
-  min-width: 80px;
-  padding: 0.75rem 0.5rem;
-  font-size: 0.85rem;
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-  color: #555555;
-}
-
-.tab-button[aria-current="true"] {
-  color: #2563eb;
-  border-bottom-color: #2563eb;
-  font-weight: bold;
-}
-
-/* ===========================
-   メインコンテンツ
+   メイン
 =========================== */
 
 .app-main {
-  max-width: 600px;
+  max-width: 640px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: var(--space-lg);
 }
 
 .tab-panel {
-  background-color: #ffffff;
-  border: 1px solid #dddddd;
-  border-radius: 6px;
-  padding: 1rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-lg);
 }
 
 .tab-panel h2 {
   margin-top: 0;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .placeholder-text {
-  color: #888888;
+  color: var(--color-text-sub);
   font-size: 0.9rem;
   margin: 0;
+}
+
+/* ===========================
+   ナビゲーション（スマホ：下部固定タブバー）
+   PC（768px以上）は上部固定へ切り替える
+=========================== */
+
+.tab-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+  display: flex;
+  /* .app-main と揃えて間延びしないようにする */
+  max-width: 640px;
+  margin: 0 auto;
+  background-color: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  /* iOS のホームバー分の余白を確保する */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.tab-button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: var(--bottom-nav-height);
+  padding: var(--space-sm) var(--space-xs);
+  font-size: 0.75rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-sub);
+  transition: color 0.15s ease;
+}
+
+.tab-button::before {
+  /* 各タブの簡易アイコン（絵文字）。色だけに頼らず形でも区別できる */
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.tab-button[data-tab="home"]::before    { content: "🏠"; }
+.tab-button[data-tab="form"]::before    { content: "✏️"; }
+.tab-button[data-tab="history"]::before { content: "📋"; }
+.tab-button[data-tab="summary"]::before { content: "📊"; }
+
+.tab-button[aria-current="true"] {
+  color: var(--color-primary);
+  font-weight: 700;
 }
 
 /* ===========================
@@ -95,68 +166,86 @@ body {
 =========================== */
 
 fieldset {
-  border: 1px solid #cccccc;
-  border-radius: 4px;
-  padding: 0.5rem 0.75rem;
-  margin: 0 0 1rem 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-field);
+  padding: var(--space-md);
+  margin: 0 0 var(--space-lg) 0;
 }
 
 legend {
-  padding: 0 0.25rem;
-  font-size: 0.9rem;
+  padding: 0 var(--space-xs);
+  font-size: 0.85rem;
+  color: var(--color-text-sub);
 }
 
 .radio-group {
   display: flex;
-  gap: 1.5rem;
+  gap: var(--space-sm);
 }
 
+/* 収支区分を押しやすいピル型ボタン風にする */
 .radio-group label {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
   cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.radio-group input[type="radio"] {
+  accent-color: var(--color-primary);
 }
 
 .form-field {
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-lg);
 }
 
 .form-field label {
   display: block;
-  font-size: 0.9rem;
-  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--color-text-sub);
+  margin-bottom: var(--space-xs);
 }
 
 .form-field input,
 .form-field select {
   width: 100%;
-  padding: 0.6rem 0.75rem;
+  padding: 0.7rem 0.85rem;
   font-size: 1rem;
-  border: 1px solid #cccccc;
-  border-radius: 4px;
-  background-color: #ffffff;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-field);
+  background-color: var(--color-surface);
   appearance: auto;
 }
 
-/* ===========================
-   エラーメッセージ
-=========================== */
-
-.field-error {
-  margin: 0.2rem 0 0 0;
-  font-size: 0.85rem;
-  color: #c0392b;
-  min-height: 1.2em;
+.form-field input:focus,
+.form-field select:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  border-color: var(--color-primary);
 }
 
 /* ===========================
-   状態メッセージ
+   エラー・状態メッセージ
 =========================== */
 
+.field-error {
+  margin: var(--space-xs) 0 0 0;
+  font-size: 0.8rem;
+  color: var(--color-danger);
+  min-height: 1.2em;
+}
+
 .form-status {
-  margin: 0.5rem 0;
+  margin: var(--space-sm) 0;
   font-size: 0.9rem;
+  color: var(--color-primary);
   min-height: 1.4em;
 }
 
@@ -167,18 +256,55 @@ legend {
 .btn-primary {
   display: block;
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.85rem;
   font-size: 1rem;
-  background-color: #2563eb;
+  font-weight: 700;
+  background-color: var(--color-primary);
   color: #ffffff;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-field);
   cursor: pointer;
-  margin-top: 0.5rem;
+  transition: background-color 0.15s ease;
 }
 
 .btn-primary:hover {
-  background-color: #1d4ed8;
+  background-color: var(--color-primary-dark);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--color-primary-dark);
+  outline-offset: 2px;
+}
+
+/* ===========================
+   ホーム画面の集計
+=========================== */
+
+.home-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.summary-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface-sub);
+}
+
+.summary-card-label {
+  font-size: 0.9rem;
+  color: var(--color-text-sub);
+}
+
+.summary-card-value {
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 
 /* ===========================
@@ -192,181 +318,79 @@ legend {
 }
 
 .history-item {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 0.75rem;
-  margin-bottom: 0.75rem;
-  /* 色だけで支出・収入を区別しないよう、左のボーダーは補助的な表現にとどめる */
-  border-left: 4px solid #999999;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  border-left: 5px solid var(--color-text-sub);
 }
 
 .history-item--expense {
-  border-left-color: #c0392b;
+  border-left-color: var(--color-expense);
 }
 
 .history-item--income {
-  border-left-color: #2563eb;
+  border-left-color: var(--color-income);
 }
 
 .history-item-main {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: 1rem;
 }
 
 .history-item-type {
-  font-size: 0.8rem;
-  color: #555555;
-  /* 色だけに頼らず、文字でも支出・収入を明示する */
-  border: 1px solid #cccccc;
-  border-radius: 3px;
-  padding: 0.1rem 0.4rem;
+  font-size: 0.75rem;
+  color: var(--color-text-sub);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 0.1rem 0.6rem;
 }
 
 .history-item-amount {
-  font-weight: bold;
+  font-weight: 700;
+  font-size: 1.05rem;
 }
 
 .history-item-sub {
   display: flex;
   justify-content: space-between;
   font-size: 0.85rem;
-  color: #666666;
-  margin-top: 0.25rem;
+  color: var(--color-text-sub);
+  margin-top: var(--space-xs);
 }
 
 .history-item-memo {
   font-size: 0.85rem;
-  color: #444444;
-  margin: 0.4rem 0 0 0;
+  color: var(--color-text);
+  margin: var(--space-sm) 0 0 0;
 }
 
 .history-item-actions {
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
 }
 
 .history-item-actions button {
   font-size: 0.85rem;
-  padding: 0.4rem 0.75rem;
-  border: 1px solid #cccccc;
-  border-radius: 4px;
-  background-color: #f9f9f9;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface-sub);
   cursor: pointer;
+  color: var(--color-text);
+}
+
+.history-item-actions button:hover {
+  background-color: #eef2f8;
 }
 
 .history-empty {
-  color: #888888;
+  color: var(--color-text-sub);
   font-size: 0.9rem;
   text-align: center;
-  padding: 1rem 0;
-}
-
-/* ===========================
-   削除確認ダイアログ
-   （工程10でデザインを刷新する前提の最小スタイル）
-=========================== */
-
-.confirm-dialog {
-  border: 1px solid #cccccc;
-  border-radius: 8px;
-  padding: 0;
-  max-width: 90%;
-  width: 360px;
-}
-
-/* ダイアログの背景（オーバーレイ） */
-.confirm-dialog::backdrop {
-  background-color: rgba(0, 0, 0, 0.4);
-}
-
-.confirm-dialog-body {
-  padding: 1.25rem;
-}
-
-.confirm-dialog-title {
-  margin: 0 0 0.75rem 0;
-  font-size: 1.1rem;
-}
-
-.confirm-dialog-message {
-  margin: 0 0 0.5rem 0;
-}
-
-.confirm-dialog-target {
-  margin: 0 0 0.5rem 0;
-  padding: 0.5rem;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-  font-size: 0.9rem;
-}
-
-.confirm-dialog-note {
-  margin: 0 0 1rem 0;
-  font-size: 0.85rem;
-  color: #c0392b;
-}
-
-.confirm-dialog-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-}
-
-.btn-secondary {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  border: 1px solid #cccccc;
-  border-radius: 4px;
-  background-color: #f9f9f9;
-  cursor: pointer;
-}
-
-.btn-danger {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  border: none;
-  border-radius: 4px;
-  background-color: #c0392b;
-  color: #ffffff;
-  cursor: pointer;
-}
-
-.btn-danger:hover {
-  background-color: #a93226;
-}
-
-/* ===========================
-   ホーム画面の集計
-=========================== */
-
-.home-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.summary-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  background-color: #fafafa;
-}
-
-.summary-card-label {
-  font-size: 0.9rem;
-  color: #555555;
-}
-
-.summary-card-value {
-  font-size: 1.4rem;
-  font-weight: bold;
+  padding: var(--space-lg) 0;
 }
 
 /* ===========================
@@ -377,18 +401,23 @@ legend {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
 }
 
 .month-nav-button {
-  padding: 0.5rem 0.75rem;
+  padding: 0.55rem 0.85rem;
   font-size: 0.9rem;
-  border: 1px solid #cccccc;
-  border-radius: 4px;
-  background-color: #f9f9f9;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface-sub);
   cursor: pointer;
   white-space: nowrap;
+  color: var(--color-text);
+}
+
+.month-nav-button:hover {
+  background-color: #eef2f8;
 }
 
 .month-selector-current {
@@ -397,23 +426,26 @@ legend {
 }
 
 .month-input {
-  padding: 0.5rem;
+  padding: 0.55rem;
   font-size: 1rem;
-  border: 1px solid #cccccc;
-  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-field);
   width: 100%;
+  color: var(--color-text);
+  background-color: var(--color-surface);
 }
 
 .summary-totals {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
 }
 
 .summary-subheading {
   font-size: 0.95rem;
-  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+  margin: 0 0 var(--space-sm) 0;
 }
 
 .summary-category-list {
@@ -425,25 +457,104 @@ legend {
 .summary-category-item {
   display: flex;
   justify-content: space-between;
-  padding: 0.6rem 0.75rem;
-  border-bottom: 1px solid #eeeeee;
+  padding: 0.7rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .summary-category-name {
-  color: #333333;
+  color: var(--color-text);
 }
 
 .summary-category-total {
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .summary-category-empty {
-  color: #888888;
+  color: var(--color-text-sub);
   font-size: 0.9rem;
-  padding: 0.75rem 0;
+  padding: var(--space-md) 0;
 }
 
-/* ラベルを視覚的に隠すが、支援技術には残す */
+/* ===========================
+   削除確認ダイアログ
+=========================== */
+
+.confirm-dialog {
+  border: none;
+  border-radius: var(--radius-card);
+  padding: 0;
+  max-width: 90%;
+  width: 360px;
+  box-shadow: 0 12px 32px rgba(44, 52, 68, 0.18);
+}
+
+.confirm-dialog::backdrop {
+  background-color: rgba(44, 52, 68, 0.45);
+}
+
+.confirm-dialog-body {
+  padding: var(--space-xl);
+}
+
+.confirm-dialog-title {
+  margin: 0 0 var(--space-md) 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.confirm-dialog-message {
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.confirm-dialog-target {
+  margin: 0 0 var(--space-sm) 0;
+  padding: var(--space-md);
+  background-color: var(--color-surface-sub);
+  border-radius: var(--radius-field);
+  font-size: 0.9rem;
+}
+
+.confirm-dialog-note {
+  margin: 0 0 var(--space-lg) 0;
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+.btn-secondary {
+  padding: 0.6rem 1.1rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface-sub);
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.btn-danger {
+  padding: 0.6rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-danger);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background-color: var(--color-danger-dark);
+}
+
+/* ===========================
+   アクセシビリティ用ユーティリティ
+=========================== */
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -454,4 +565,60 @@ legend {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ===========================
+   画面適応：タブレット・PC（768px以上）
+   タブを上部固定にし、ヘッダー直下へ配置する
+=========================== */
+
+@media (min-width: 768px) {
+  body {
+    /* 下部タブ用余白は不要。上部のヘッダー＋タブ分を確保する */
+    padding-bottom: 0;
+    padding-top: calc(var(--header-height) + var(--top-nav-height));
+  }
+
+  .app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 11;
+    max-width: 640px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .tab-nav {
+    top: var(--header-height);
+    bottom: auto;
+    border-top: none;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0;
+  }
+
+  .tab-button {
+    flex-direction: row;
+    gap: var(--space-xs);
+    min-height: var(--top-nav-height);
+    padding: var(--space-md);
+    font-size: 0.9rem;
+    border-bottom: 3px solid transparent;
+  }
+
+  .tab-button::before {
+    font-size: 1rem;
+  }
+
+  .tab-button[aria-current="true"] {
+    border-bottom-color: var(--color-primary);
+  }
+}
+
+/* 動きの抑制設定を尊重する */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }
